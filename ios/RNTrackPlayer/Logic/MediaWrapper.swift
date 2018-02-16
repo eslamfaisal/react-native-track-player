@@ -14,8 +14,6 @@ protocol MediaWrapperDelegate: class {
     func playerSwitchedTracks(trackId: String?, time: TimeInterval?, nextTrackId: String?)
     func playerExhaustedQueue(trackId: String?, time: TimeInterval?)
     func playbackFailed(error: Error)
-    func headphonePluggedIn()
-    func headphonePulledOut()
 }
 
 class MediaWrapper: AudioPlayerDelegate {
@@ -200,14 +198,6 @@ class MediaWrapper: AudioPlayerDelegate {
     
     
     // MARK: - AudioPlayerDelegate
-    
-    func audioPlayer(_ audioPlayer: AudioPlayer, didHeadphonePluggIn isHeadPhone: Bool, previousState: Bool) {
-        if (isHeadPhone) {
-            delegate?.headphonePluggedIn()
-        } else {
-            delegate?.headphonePulledOut()
-        }
-    }
 
     func audioPlayer(_ audioPlayer: AudioPlayer, willChangeTrackFrom from: Track?, at position: TimeInterval?, to track: Track) {
         delegate?.playerSwitchedTracks(trackId: from?.id, time: position, nextTrackId: track.id)

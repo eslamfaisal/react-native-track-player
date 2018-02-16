@@ -106,6 +106,7 @@ class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
         do {
             try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback)
             try AVAudioSession.sharedInstance().setActive(true)
+            addRouteChangedListener()
         } catch {
             reject("setup_audio_session_failed", "Failed to setup audio session", error)
         }
@@ -115,6 +116,7 @@ class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
     
     @objc(destroy)
     func destroy() {
+        removeRouteChangedListener()
         print("Destroying player")
     }
     
@@ -300,6 +302,50 @@ class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
     }
     
     
+
+    private func addRouteChangedListener() {
+        //Checking Whether Headphone is already plugged in or not
+        let outputs = AVAudioSession.sharedInstance().currentRoute.outputs
+
+        for output in outputs{
+            if output.portType == AVAudioSessionPortHeadphones {
+                self.headphonePluggedIn()
+            }
+        }
+
+        #if os(iOS) || os(tvOS)
+          let center = NotificationCenter.default
+          center.addObserver(
+              self,
+              selector: #selector(self.audioSessionRouteChanged(note:)),
+              name: .AVAudioSessionRouteChange,
+              object: nil
+          )
+        #endif
+    }
+    private func removeRouteChangedListener() {
+        #if os(iOS) || os(tvOS)
+            let center = NotificationCenter.default
+            center.removeObserver(self, name: .AVAudioSessionRouteChange, object: nil)
+        #endif
+
+    }
+
+    /// Audio session route changed (ex: earbuds plugged in/out). This can change the player state, so we just adapt it.
+    ///
+    /// - Parameter note: The notification information.
+    @objc fileprivate func audioSessionRouteChanged(note: NSNotification) {
+        let audioRouteChangeReason = note.userInfo![AVAudioSessionRouteChangeReasonKey]  as? UInt
+        switch audioRouteChangeReason {
+          case AVAudioSessionRouteChangeReason.newDeviceAvailable.rawValue?:
+              self.headphonePluggedIn()
+          case AVAudioSessionRouteChangeReason.oldDeviceUnavailable.rawValue?:
+              self.headphonePulledOut()
+          default:
+              break;
+        }
+    }
+
     // MARK: - Remote Dynamic Methods
     
     func remoteSentStop() {
