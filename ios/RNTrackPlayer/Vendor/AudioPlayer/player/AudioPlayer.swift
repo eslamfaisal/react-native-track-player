@@ -79,7 +79,9 @@ public class AudioPlayer: NSObject {
     /// The current item being played.
     internal(set) var currentItem: Track? {
         didSet {
-            if let currentItem = currentItem {
+            if (oldValue == currentItem) {
+                resume()
+            } else if let currentItem = currentItem {
                 // Save previous item's progression
                 let oldProgression = currentItemProgression
                 
